@@ -5,7 +5,7 @@ job "sockshop-carts" {
     network {
       mode = "bridge"
 
-      port "http" {}
+      port "http" { to = 80 }
     }
 
     service {
@@ -42,19 +42,7 @@ job "sockshop-carts" {
 
       config {
         image = "weaveworksdemos/carts:0.4.8"
-
-        entrypoint = [
-          "java",
-          "-Djava.security.egd=file:/dev/urandom",
-          "-jar",
-          "./app.jar"
-        ]
-
-        args = [
-          "--db=localhost",
-          "--port=${NOMAD_PORT_http}"
-        ]
-
+        args  = ["--db=localhost"]
         ports = ["http"]
       }
 
