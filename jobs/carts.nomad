@@ -4,11 +4,22 @@ job "sockshop-carts" {
   group "carts" {
     network {
       mode = "bridge"
+
+      port "http" {}
     }
 
     service {
       name = "sockshop-carts"
-      port = "80"
+      port = "http"
+
+      check {
+        name     = "carts"
+        type     = "http"
+        port     = "http"
+        path     = "/health"
+        interval = "5s"
+        timeout  = "2s"
+      }
 
       connect {
         sidecar_service {
@@ -31,7 +42,20 @@ job "sockshop-carts" {
 
       config {
         image = "weaveworksdemos/carts:0.4.8"
-        args  = ["--db=localhost"]
+
+        entrypoint = [
+          "java",
+          "-Djava.security.egd=file:/dev/urandom",
+          "-jar",
+          "./app.jar"
+        ]
+
+        args = [
+          "--db=localhost",
+          "--port=${NOMAD_PORT_http}"
+        ]
+
+        ports = ["http"]
       }
 
       env = {
@@ -40,7 +64,7 @@ job "sockshop-carts" {
 
       resources {
         cpu    = 100
-        memory = 512
+        memory = 1024
       }
 
       logs {
