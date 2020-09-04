@@ -4,11 +4,22 @@ job "sockshop-infra" {
   group "proxy" {
     network {
       mode = "bridge"
+
+      port "http" { to = 80 }
     }
 
     service {
       name = "sockshop-proxy"
-      port = "80"
+      port = "http"
+
+      check {
+        name     = "proxy"
+        type     = "http"
+        port     = "http"
+        path     = "/ping"
+        interval = "5s"
+        timeout  = "2s"
+      }
 
       connect {
         sidecar_service {
@@ -61,6 +72,7 @@ job "sockshop-infra" {
           "local/traefik.toml:/etc/traefik/traefik.toml",
           "local/traefik.d/:/etc/traefik.d",
         ]
+        ports = ["http"]
       }
 
       template {
@@ -68,6 +80,9 @@ job "sockshop-infra" {
 [entryPoints]
   [entryPoints.http]
     address = ":80"
+
+[ping]
+  entryPoint = "http"
 
 [providers.file]
   directory = "/etc/traefik.d/"

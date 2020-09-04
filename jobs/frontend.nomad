@@ -4,11 +4,24 @@ job "sockshop-frontend" {
   group "frontend" {
     network {
       mode = "bridge"
+
+      port "http" {}
     }
 
     service {
       name = "sockshop-frontend"
-      port = "8079"
+      port = "http"
+
+      check {
+        name     = "frontend"
+        type     = "http"
+        port     = "http"
+        path     = "/"
+        interval = "5s"
+        timeout  = "2s"
+      }
+
+
 
       connect {
         sidecar_service {
@@ -28,12 +41,16 @@ job "sockshop-frontend" {
 
     task "frontend" {
       driver = "docker"
+      env {
+        PORT = "${NOMAD_PORT_http}"
+      }
 
       config {
         image = "weaveworksdemos/front-end:0.3.11"
         volumes = [
           "local/resolv.conf:/etc/resolv.conf"
         ]
+        ports = ["http"]
       }
 
       template {
@@ -71,7 +88,16 @@ EOH
 
     service {
       name = "sockshop-edgerouter"
-      port = "80"
+      port = "http"
+
+      check {
+        name     = "edgerouter"
+        type     = "http"
+        port     = "http"
+        path     = "/ping"
+        interval = "5s"
+        timeout  = "2s"
+      }
 
       connect {
         sidecar_service {
@@ -92,12 +118,18 @@ EOH
     task "edgerouter" {
       driver = "docker"
 
+      env {
+        PORT = "${NOMAD_PORT_http}"
+      }
+
       config {
         image = "weaveworksdemos/edge-router:0.1.1"
+        args = ["--ping"]        
 
         volumes = [
           "local/traefik.toml:/etc/traefik/traefik.toml",
         ]
+        ports = ["http"]
       }
 
       template {
@@ -110,6 +142,9 @@ address = ":8080"
 [entryPoints]
   [entryPoints.http]
     address = ":80"
+
+[ping]
+entryPoint = "http"
 
 [file]
   [backends]
