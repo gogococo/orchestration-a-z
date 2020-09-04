@@ -4,11 +4,22 @@ job "sockshop-catalogue" {
   group "catalogue" {
     network {
       mode = "bridge"
+
+      port "http" {}
     }
 
     service {
       name = "sockshop-catalogue"
-      port = "80"
+      port = "http"
+
+      check {
+        name     = "catalogue"
+        type     = "http"
+        port     = "http"
+        path     = "/health"
+        interval = "5s"
+        timeout  = "2s"
+      }
 
       connect {
         sidecar_service {
@@ -33,9 +44,11 @@ job "sockshop-catalogue" {
         image   = "weaveworksdemos/catalogue:0.3.5"
         command = "/app"
         args = [
-          "-port=80",
+          "-port=${NOMAD_PORT_http}",
           "-DSN=catalogue_user:default_password@tcp(${NOMAD_UPSTREAM_ADDR_sockshop_cataloguedb})/socksdb"
         ]
+
+        ports = ["http"]
       }
 
       resources {
