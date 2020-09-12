@@ -4,11 +4,13 @@ job "sockshop-payment" {
   group "payment" {
     network {
       mode = "bridge"
+
+      port "http" {}
     }
 
     service {
       name = "sockshop-payment"
-      port = "80"
+      port = "http"
 
       connect {
         sidecar_service {}
@@ -23,7 +25,10 @@ job "sockshop-payment" {
       driver = "docker"
 
       config {
-        image = "weaveworksdemos/payment:0.4.3"
+        image   = "weaveworksdemos/payment:0.4.3"
+        command = "/app"
+        args    = ["-port=${NOMAD_PORT_http}"]
+        ports   = ["http"]
       }
 
       resources {

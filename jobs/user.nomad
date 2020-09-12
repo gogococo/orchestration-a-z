@@ -4,11 +4,13 @@ job "sockshop-user" {
   group "user" {
     network {
       mode = "bridge"
+
+      port "http" {}
     }
 
     service {
       name = "sockshop-user"
-      port = "80"
+      port = "http"
 
       connect {
         sidecar_service {
@@ -31,6 +33,12 @@ job "sockshop-user" {
 
       config {
         image = "weaveworksdemos/user:0.4.7"
+        command = "/user"
+        // tail -f /dev/null
+        // "/user -port=80"
+        args = ["-port=${NOMAD_PORT_http}"]
+        ports   = ["http"]
+
       }
 
       env {

@@ -12,7 +12,11 @@ stop-all: $(STOP_SERVICES)
 
 .PHONY: $(SERVICES)
 $(SERVICES):
-	nomad run $@.nomad
+	nomad run \
+		-ca-cert=nomad-ca.pem \
+		-client-cert=nomad-cli-cert.pem \
+		-client-key=nomad-cli-key.pem \
+		$@.nomad
 
 .PHONY: stop-%
 stop-%:

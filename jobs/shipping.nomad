@@ -4,11 +4,13 @@ job "sockshop-shipping" {
   group "shipping" {
     network {
       mode = "bridge"
+
+      port "http" {}
     }
 
     service {
       name = "sockshop-shipping"
-      port = "80"
+      port = "http"
 
       connect {
         sidecar_service {
@@ -30,8 +32,10 @@ job "sockshop-shipping" {
       driver = "docker"
 
       config {
-        image = "weaveworksdemos/shipping:0.4.8"
-        args  = ["--spring.rabbitmq.host=localhost"]
+        image      = "weaveworksdemos/shipping:0.4.8"
+        entrypoint = ["/usr/local/bin/java.sh", "-jar", "./app.jar"]
+        args       = ["--port=${NOMAD_PORT_http}", "--spring.rabbitmq.host=localhost"]
+        ports      = ["http"]
       }
 
       env = {
