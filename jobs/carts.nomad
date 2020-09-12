@@ -4,11 +4,13 @@ job "sockshop-carts" {
   group "carts" {
     network {
       mode = "bridge"
+
+      port "http" {}
     }
 
     service {
       name = "sockshop-carts"
-      port = "80"
+      port = "http"
 
       connect {
         sidecar_service {
@@ -30,8 +32,10 @@ job "sockshop-carts" {
       driver = "docker"
 
       config {
-        image = "weaveworksdemos/carts:0.4.8"
-        args  = ["--db=localhost"]
+        image      = "weaveworksdemos/carts:0.4.8"
+        entrypoint = ["/usr/local/bin/java.sh", "-jar", "./app.jar"]
+        args       = ["--port=${NOMAD_PORT_http}", "--db=localhost"]
+        ports      = ["http"]
       }
 
       env = {
