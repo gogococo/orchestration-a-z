@@ -1,0 +1,142 @@
+{
+    "variables": {
+        "project": "{{env `GOOGLE_PROJECT`}}",
+        "account_file": "{{env `GOOGLE_APPLICATION_CREDENTIALS`}}",
+        "zone": "us-east1-b",
+        "disk_size_gb": "10",
+        "source_image_family": "ubuntu-1804-lts",
+        "use_iap": "false",
+        "use_preemptible": "false"
+    },
+    "builders": [
+        {
+            "name": "bastion",
+            "type": "googlecompute",
+            "account_file": "{{user `account_file`}}",
+            "project_id": "{{user `project`}}",
+            "source_image_family": "{{user `source_image_family`}}",
+            "image_description": "nomad bastion image",
+            "image_name": "kentgcp-owasp-sockshopv2/bastion",
+            "disk_size": "{{user `disk_size_gb`}}",
+            "machine_type": "n1-standard-1",
+            "state_timeout": "15m",
+            "ssh_username": "ubuntu",
+            "zone": "{{user `zone`}}",
+            "preemptible": "{{user `use_preemptible`}}"
+        },
+        {
+            "name": "server",
+            "type": "googlecompute",
+            "account_file": "{{user `account_file`}}",
+            "project_id": "{{user `project`}}",
+            "source_image_family": "{{user `source_image_family`}}",
+            "image_description": "HashiCorp Nomad and Consul server image",
+            "image_name": "kentgcp-owasp-sockshopv2/server",
+            "disk_size": "{{user `disk_size_gb`}}",
+            "machine_type": "n1-standard-1",
+            "state_timeout": "15m",
+            "ssh_username": "ubuntu",
+            "zone": "{{user `zone`}}",
+            "preemptible": "{{user `use_preemptible`}}"
+        },
+        {
+            "name": "client",
+            "type": "googlecompute",
+            "account_file": "{{user `account_file`}}",
+            "project_id": "{{user `project`}}",
+            "source_image_family": "{{user `source_image_family`}}",
+            "image_description": "HashiCorp Nomad and Consul client image",
+            "image_name": "kentgcp-owasp-sockshopv2/client",
+            "disk_size": "{{user `disk_size_gb`}}",
+            "machine_type": "n1-standard-1",
+            "state_timeout": "15m",
+            "ssh_username": "ubuntu",
+            "zone": "{{user `zone`}}",
+            "preemptible": "{{user `use_preemptible`}}"
+        }
+    ],
+    "provisioners": [
+        {
+            "only": ["server"],
+			"type": "file",
+			"source": "configs/nomad/server.hcl",
+			"destination": "/tmp/nomad-agent.hcl"
+		},
+        {
+            "only": ["server"],
+			"type": "file",
+			"source": "configs/consul/server.hcl",
+			"destination": "/tmp/consul-agent.hcl"
+		},
+        {
+            "only": ["client"],
+			"type": "file",
+			"source": "configs/nomad/client.hcl",
+			"destination": "/tmp/nomad-agent.hcl"
+		},
+        {
+            "only": ["client"],
+			"type": "file",
+			"source": "configs/consul/client.hcl",
+			"destination": "/tmp/consul-agent.hcl"
+		},
+		{
+            "only": ["server", "client"],
+			"type": "file",
+			"source": "configs/nomad/nomad.service",
+			"destination": "/tmp/nomad.service"
+		},
+		{
+            "only": ["server", "client"],
+			"type": "file",
+			"source": "configs/consul/consul.service",
+			"destination": "/tmp/consul.service"
+		},
+		{
+			"type": "shell",
+			"scripts": [
+				"scripts/install_required_packages.sh"
+			]
+		},
+		{
+            "only": ["client"],
+			"type": "shell",
+			"scripts": [
+				"scripts/install_docker.sh",
+				"scripts/install_gvisor.sh"
+			]
+		},
+		{
+            "only": ["client"],
+			"type": "shell",
+			"scripts": [
+				"scripts/install_cni_plugins.sh"
+			]
+		},
+		{
+            "only": ["server", "client"],
+			"type": "shell",
+			"scripts": [
+                "scripts/install_nomad.sh",
+                "scripts/install_consul.sh"
+			]
+		},
+		{
+			"type": "shell",
+			"scripts": [
+				"scripts/install_stack_driver_agent.sh"
+			]
+		},
+		{
+            "only": ["bastion"],
+			"type": "shell",
+			"inline": [
+                "curl https://releases.hashicorp.com/nomad/0.12.1/nomad_0.12.1_linux_amd64.zip -o nomad.zip",
+                "unzip nomad.zip",
+                "sudo mv nomad /bin",
+                "rm nomad.zip"
+            ]
+		}
+    ]
+}
+
