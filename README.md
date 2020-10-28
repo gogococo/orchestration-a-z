@@ -43,3 +43,7 @@ go run ssh-mtls-terminating-proxy.go \
 -consul-key-file="consul-cli-key.pem"
 
 ## Running the demo - SockShop
+nomad run ${job}
+
+Connecting to the instance via ssh tunnel
+gcloud compute ssh client-0 --zone=us-east1-c --tunnel-through-iap -- -f -N -L 127.0.0.1:9002:127.0.0.1:9002
